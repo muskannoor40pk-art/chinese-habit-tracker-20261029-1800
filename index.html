@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="zh-CN" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>每日习惯追踪</title>
+    
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>习惯追踪</h1>
+        <div id="date-display"></div>
+    </header>
+
+    <div class="card">
+        <div class="add-form">
+            <input type="text" id="habit-input" placeholder="输入新习惯，例如：阅读 30 分钟...">
+            <button onclick="addHabit()">添加</button>
+        </div>
+    </div>
+
+    <div id="habit-list"></div>
+</div>
+
+<script>
+    let habits = JSON.parse(localStorage.getItem('habits')) || [
+        { id: 1, name: '晨间冥想', streak: 3, history: [0, 0, 0, 0, 1, 1, 1] }
+    ];
+
+    function save() { localStorage.setItem('habits', JSON.stringify(habits)); render(); }
+
+    function addHabit() {
+        const input = document.getElementById('habit-input');
+        if (!input.value) return;
+        habits.push({ 
+            id: Date.now(), 
+            name: input.value, 
+            streak: 0, 
+            history: [0, 0, 0, 0, 0, 0, 0] 
+        });
+        input.value = '';
+        save();
+    }
+
+    function toggleDay(habitId, dayIndex) {
+        const habit = habits.find(h => h.id === habitId);
+        habit.history[dayIndex] = habit.history[dayIndex] === 1 ? 0 : 1;
+        updateStreak(habit);
+        save();
+    }
+
+    function updateStreak(habit) {
+        let count = 0;
+        for (let i = habit.history.length - 1; i >= 0; i--) {
+            if (habit.history[i] === 1) count++;
+            else break;
+        }
+        habit.streak = count;
+    }
+
+    function deleteHabit(id) {
+        habits = habits.filter(h => h.id !== id);
+        save();
+    }
+
+    function render() {
+        const list = document.getElementById('habit-list');
+        list.innerHTML = '';
+        habits.forEach(habit => {
+            const row = document.createElement('div');
+            row.className = 'card';
+            row.innerHTML = `
+                <div class="habit-row">
+                    <div class="habit-info">
+                        <h3>${habit.name}</h3>
+                        <p>当前连胜: ${habit.streak} 天</p>
+                    </div>
+                    <div class="days-grid">
+                        ${habit.history.map((val, i) => `
+                            <div class="day-box ${val ? 'active' : ''}" onclick="toggleDay(${habit.id}, ${i})">
+                                ${['一','二','三','四','五','六','日'][i]}
+                            </div>
+                        `).join('')}
+                    </div>
+                    <button class="btn-del" onclick="deleteHabit(${habit.id})">删除</button>
+                </div>
+            `;
+            list.appendChild(row);
+        });
+    }
+
+    document.getElementById('date-display').innerText = new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' });
+    render();
+</script>
+
+</body>
+</html>
